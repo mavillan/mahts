@@ -1,2 +1,2 @@
-# hts
-Hierarchical Time Series Forecast in Python
+# htspy
+Hierarchical Time Series methods in Python
