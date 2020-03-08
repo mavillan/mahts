@@ -1,11 +1,9 @@
 import numpy as np
 import pandas as pd
 from anytree import LevelOrderIter
-from hts.tree import (build_tree, 
-                      get_nodes_per_level,
-                      compute_summing_matrix)
+from hts.tree import build_tree, compute_summing_matrix
 
-class HierarchicalTimeSerie:
+class HTSDistributor():
     def __init__(self, hierarchy):
         """
         Parameters
@@ -48,14 +46,15 @@ class HierarchicalTimeSerie:
     def compute_forecasted_proportions(self, forecast):
         assert set(forecast.columns) == set(self.tree_nodes), \
             f"'forecast' dataframe must have only the columns: {self.tree_nodes}."
-        proportions_by_level = pd.DataFrame(np.ones(forecast.shape[0]), columns=["root"])
+        proportions_by_node = pd.DataFrame(np.ones(forecast.shape[0]), columns=["root"])
         for node in LevelOrderIter(self.tree):
             if node.name == "root": continue
             level_nodes = [nd.name for nd in node.parent.children]
-            proportions_by_level[node.name] = forecast.loc[:,node.name]/forecast.loc[:,level_nodes].sum(axis=1)
-            proportions_by_level[node.name] *= proportions_by_level[node.parent.name]
-        forecast_bottom = proportions_by_level[self.bottom_nodes] * forecast["root"].values.reshape(-1,1)
-        self.proportions = proportions_by_level
+            proportions_by_node[node.name] = forecast.loc[:,node.name]/forecast.loc[:,level_nodes].sum(axis=1)
+            proportions_by_node.loc[:, node.name] = proportions_by_node[node.name].fillna(0)
+            proportions_by_node.loc[:, node.name] *= proportions_by_node[node.parent.name]
+        forecast_bottom = proportions_by_node[self.bottom_nodes] * forecast["root"].values.reshape(-1,1)
+        self.proportions = proportions_by_node
         return self.compute_bottom_up(forecast_bottom)
 
     def compute_middle_out(self, data, forecast):
