@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from anytree import LevelOrderIter
-from hts.tree import build_tree, compute_summing_matrix
+from hts.hierarchy import build_tree, compute_summing_matrix
 
 class HTSDistributor():
     def __init__(self, hierarchy):
@@ -43,7 +43,7 @@ class HTSDistributor():
         self.proportions = proportions
         return self.compute_bottom_up(forecast_bottom)
     
-    def compute_forecasted_proportions(self, forecast):
+    def compute_forecast_proportions(self, forecast):
         assert set(forecast.columns) == set(self.tree_nodes), \
             f"'forecast' dataframe must have only the columns: {self.tree_nodes}."
         proportions_by_node = pd.DataFrame(np.ones(forecast.shape[0]), columns=["root"])
@@ -57,7 +57,7 @@ class HTSDistributor():
         self.proportions = proportions_by_node
         return self.compute_bottom_up(forecast_bottom)
 
-    def compute_middle_out(self, data, forecast):
+    def compute_middle_out(self, data, forecast, middle_level=None):
         pass
     
     def compute_optimal_combination(self, forecast):
