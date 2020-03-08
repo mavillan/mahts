@@ -64,4 +64,11 @@ class HTSDistributor():
         pass
     
     def compute_optimal_combination(self, forecast):
-        pass
+        assert set(forecast.columns) == set(self.tree_nodes), \
+            f"'forecast' dataframe must have only the columns: {self.tree_nodes}."
+        adjusted_rows = list()
+        for _,row in forecast.iterrows():
+            x_sol = np.linalg.lstsq(self.summing_matrix, row[self.tree_nodes].values, rcond=None)[0]
+            adjusted_rows.append(x_sol)
+        forecast_bottom = pd.DataFrame(adjusted_rows, columns=self.bottom_nodes)
+        return self.compute_bottom_up(forecast_bottom)
