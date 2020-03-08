@@ -5,7 +5,7 @@ with open('requirements.txt', 'r') as f:
     install_requires = f.read().splitlines()
 
 setup(
-    name='htspy',
+    name='mahts',
     version='0.0.1',
     author='Martín Villanueva',
     author_email='nallivam@gmail.com',
