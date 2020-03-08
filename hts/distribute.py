@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from anytree import LevelOrderIter
+from anytree import LevelOrderIter, RenderTree, AsciiStyle
 from hts.hierarchy import build_tree, compute_summing_matrix
 
 class HTSDistributor():
@@ -20,6 +20,9 @@ class HTSDistributor():
         self.tree_nodes = tree_nodes
         self.bottom_nodes = bottom_nodes
         self.proportions = None
+    
+    def show_tree(self):
+        print(RenderTree(self.tree, style=AsciiStyle())) 
 
     def compute_bottom_up(self, forecast):
         assert set(forecast.columns) == set(self.bottom_nodes), \
