@@ -1,2 +1,2 @@
-# htspy
-Hierarchical Time Series methods in Python
+# mahts
+Model Agnostic Hierarchical Time Series in Python
