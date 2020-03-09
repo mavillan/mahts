@@ -41,4 +41,4 @@ class TestForecaster(unittest.TestCase):
         tree = build_tree(self.hierarchy)
         actual_matrix = compute_summing_matrix(tree)[0]
 
-        np.testing.assert_array_equal(expected_matrix, actual_matrix)
+        np.testing.assert_array_equal(actual_matrix, expected_matrix)
