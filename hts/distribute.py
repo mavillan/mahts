@@ -22,19 +22,50 @@ class HTSDistributor():
         self.proportions = None
     
     def show_tree(self):
+        """
+        Renders the hierarchical tree.
+        """
         print(RenderTree(self.tree, style=AsciiStyle())) 
 
     def compute_bottom_up(self, forecast):
+        """
+        Computes the bottom-up aggregation of the provided data.
+
+        Parameters
+        ----------
+        forecast: pandas.DataFrame
+            Dataframe containing the forecast predictions of the 
+            base series in its columns.
+        """
         assert set(forecast.columns) == set(self.bottom_nodes), \
             f"'forecast' dataframe must have only the columns: {self.bottom_nodes}."
+
         result = np.dot(forecast.loc[:, self.bottom_nodes].values, self.summing_matrix.T)
         return pd.DataFrame(result, columns=self.tree_nodes)
 
     def compute_top_down(self, data, forecast, kind="ahp"):
+        """
+        Compute the top-down reconciliation of the provided forecast
+        using the historical data.
+
+        Parameters
+        ----------
+        data: pandas.DataFrame
+            Dataframe containing the historical time series of
+            the base series in its columns.
+        forecast: pandas.DataFrame
+            Dataframe containing the forecast for the total/root
+            time serie.
+        kind: str
+            Kind of proportions used for reconciliation: 1) "ahp"
+            average of historical proportions, or 2) "pha" proportions
+            of historical average" 
+        """
         assert set(data.columns) == set(self.bottom_nodes), \
             f"'data' dataframe must have only the columns: {self.bottom_nodes}."
         assert set(forecast.columns) == set(["root"]), \
             "'forecast' dataframe must have only the column: 'root'."
+
         data = data.copy(deep=True).loc[:, self.bottom_nodes]
         root_timeserie = data.values.sum(axis=1)
         if kind == "ahp":
@@ -47,8 +78,19 @@ class HTSDistributor():
         return self.compute_bottom_up(forecast_bottom)
     
     def compute_forecast_proportions(self, forecast):
+        """
+        Computes the top-down reconciliation using the forecast
+        values as proportions.
+
+        Parameters
+        ----------
+        forecast: pandas.DataFrame
+            Dataframe containing the forecast for the series in all
+            levels of the hierarchy in its columns.
+        """
         assert set(forecast.columns) == set(self.tree_nodes), \
             f"'forecast' dataframe must have only the columns: {self.tree_nodes}."
+
         proportions_by_node = pd.DataFrame(np.ones(forecast.shape[0]), columns=["root"])
         for node in LevelOrderIter(self.tree):
             if node.name == "root": continue
@@ -64,8 +106,19 @@ class HTSDistributor():
         pass
     
     def compute_optimal_combination(self, forecast):
+        """
+        Computes optimal-combination reconciliation between all
+        levels, using least-squares minimization.
+
+        Parameters
+        ----------
+        forecast: pandas.DataFrame
+            Dataframe containing the forecast for the series in all
+            levels of the hierarchy in its columns.
+        """
         assert set(forecast.columns) == set(self.tree_nodes), \
             f"'forecast' dataframe must have only the columns: {self.tree_nodes}."
+
         adjusted_rows = list()
         for _,row in forecast.iterrows():
             x_sol = np.linalg.lstsq(self.summing_matrix, row[self.tree_nodes].values, rcond=None)[0]
