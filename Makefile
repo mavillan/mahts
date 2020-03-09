@@ -1,3 +1,8 @@
+prepare-dev:
+	pip install --upgrade pip && \
+	pip install -U -r requirements.txt && \
+	python setup.py develop
+
 test:
 	python -m unittest tests/*_test.py
 
