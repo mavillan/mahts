@@ -88,7 +88,25 @@ class TestForecaster(unittest.TestCase):
         pd.testing.assert_frame_equal(actual, expected)
     
     def test_it_computes_forecast_proportions(self):
-        pass
-    
+        forecast = pd.DataFrame(
+            [[10, 4, 6, 2, 2, 1, 2, 3],
+             [10, 4, 4, 2, 1, 1, 1, 1],
+             [10, 3, 1, 1, 2, 1, 1, 2],
+             [10, 1, 3, 2, 1, 1, 1, 1]],
+            columns=["root", "A", "B", "A1", "A2", "B1", "B2", "B3"]
+        )
+        expected = pd.DataFrame(
+            [[10., 4., 6., 2., 2., 1., 2., 3.],
+             [10., 5., 5., 5*(2/3), 5*(1/3), 5*(1/3), 5*(1/3), 5*(1/3)],
+             [10., 7.5, 2.5, 7.5*(1/3), 7.5*(2/3), 2.5*(1/4), 2.5*(1/4), 2.5*(1/2)],
+             [10., 2.5, 7.5, 2.5*(2/3), 2.5*(1/3), 7.5*(1/3), 7.5*(1/3), 7.5*(1/3)]],
+            columns=["root", "A", "B", "A1", "A2", "B1", "B2", "B3"]
+        )
+
+        hts = HTSDistributor(self.hierarchy)
+        actual = hts.compute_forecast_proportions(forecast)
+
+        pd.testing.assert_frame_equal(actual, expected)
+
     def test_it_computes_optimal_combination(self):
         pass
