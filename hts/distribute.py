@@ -41,7 +41,7 @@ class HTSDistributor():
             f"'forecast' dataframe must have only the columns: {self.bottom_nodes}."
 
         result = np.dot(forecast.loc[:, self.bottom_nodes].values, self.summing_matrix.T)
-        return pd.DataFrame(result, columns=self.tree_nodes)
+        return pd.DataFrame(result, columns=self.tree_nodes, index=forecast.index)
 
     def compute_top_down(self, data, forecast, kind="ahp"):
         """
@@ -91,7 +91,7 @@ class HTSDistributor():
         assert set(forecast.columns) == set(self.tree_nodes), \
             f"'forecast' dataframe must have only the columns: {self.tree_nodes}."
 
-        proportions_by_node = pd.DataFrame(np.ones(forecast.shape[0]), columns=["root"])
+        proportions_by_node = pd.DataFrame(np.ones(forecast.shape[0]), columns=["root"], index=forecast.index)
         for node in LevelOrderIter(self.tree):
             if node.name == "root": continue
             level_nodes = [nd.name for nd in node.parent.children]
