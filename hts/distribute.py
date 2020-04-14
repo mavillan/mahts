@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import sparse
 import pandas as pd
 from anytree import LevelOrderIter, RenderTree, AsciiStyle
 from hts.hierarchy import build_tree, compute_summing_matrix
@@ -17,6 +18,7 @@ class HTSDistributor():
         self.hierarchy = hierarchy
         self.tree = tree
         self.summing_matrix = summing_matrix
+        self.sparse_summing_matrix = sparse.csr_matrix(summing_matrix)
         self.tree_nodes = tree_nodes
         self.bottom_nodes = bottom_nodes
         self.proportions = None
@@ -105,7 +107,7 @@ class HTSDistributor():
     def compute_middle_out(self, data, forecast, middle_level=None):
         pass
     
-    def compute_optimal_combination(self, forecast):
+    def compute_optimal_combination(self, forecast, solver_kwargs=dict()):
         """
         Computes optimal-combination reconciliation between all
         levels, using least-squares minimization.
@@ -121,7 +123,9 @@ class HTSDistributor():
 
         adjusted_rows = list()
         for _,row in forecast.iterrows():
-            x_sol = np.linalg.lstsq(self.summing_matrix, row[self.tree_nodes].values, rcond=None)[0]
+            x_sol = sparse.linalg.lsqr(self.sparse_summing_matrix, 
+                                       row[self.tree_nodes].values,
+                                       **solver_kwargs)[0]
             adjusted_rows.append(x_sol)
         forecast_bottom = pd.DataFrame(adjusted_rows, columns=self.bottom_nodes)
         return self.compute_bottom_up(forecast_bottom)
