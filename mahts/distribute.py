@@ -2,7 +2,7 @@ import numpy as np
 from scipy import sparse
 import pandas as pd
 from anytree import LevelOrderIter, RenderTree, AsciiStyle
-from hts.hierarchy import build_tree, compute_summing_matrix
+from mahts.hierarchy import build_tree, compute_summing_matrix
 
 class HTSDistributor():
     def __init__(self, hierarchy):

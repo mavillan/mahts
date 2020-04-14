@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from anytree import Node, LevelOrderGroupIter
-from hts.hierarchy import build_tree, compute_summing_matrix
+from mahts.hierarchy import build_tree, compute_summing_matrix
 
 class TestForecaster(unittest.TestCase):
     def setUp(self):

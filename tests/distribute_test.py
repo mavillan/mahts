@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from hts import HTSDistributor
+from mahts import HTSDistributor
 
 class TestForecaster(unittest.TestCase):
     def setUp(self):
