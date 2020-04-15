@@ -107,7 +107,7 @@ class HTSDistributor():
     def compute_middle_out(self, data, forecast, middle_level=None):
         pass
     
-    def compute_optimal_combination(self, forecast, solver_kwargs=dict()):
+    def compute_optimal_combination(self, forecast, weights=None, solver_kwargs=dict()):
         """
         Computes optimal-combination reconciliation between all
         levels, using least-squares minimization.
@@ -117,15 +117,31 @@ class HTSDistributor():
         forecast: pandas.DataFrame
             Dataframe containing the forecast for the series in all
             levels of the hierarchy in its columns.
+        weights: dict
+            Weights used of weighted least squares regression. Must
+            contain the time series indentifier in its keys and the 
+            corresponding weights as values.
+        solver_kwargs: dict
+            Extra keyword arguments of scipy.sparse.linalg.lsqr function.
         """
         assert set(forecast.columns) == set(self.tree_nodes), \
-            f"'forecast' dataframe must have only the columns: {self.tree_nodes}."
+            f"'forecast' dataframe must have all (and only) the columns: {self.tree_nodes}."
+
+        if weights is not None:
+            assert set(weights.keys()) == set(self.tree_nodes), \
+                f"'weights' dict must have all (and only) the keys: {self.tree_nodes}."
+            weights_matrix = sparse.diags([weights[node] for node in self.tree_nodes])
+            X = weights_matrix.dot(self.sparse_summing_matrix)
+        else:
+            X = self.sparse_summing_matrix
 
         adjusted_rows = list()
         for _,row in forecast.iterrows():
-            x_sol = sparse.linalg.lsqr(self.sparse_summing_matrix, 
-                                       row[self.tree_nodes].values,
-                                       **solver_kwargs)[0]
-            adjusted_rows.append(x_sol)
+            if weights is not None:
+                y = weights_matrix.dot(row[self.tree_nodes].values)
+            else:
+                y = row[self.tree_nodes].values
+            beta = sparse.linalg.lsqr(X, y, **solver_kwargs)[0]
+            adjusted_rows.append(beta)
         forecast_bottom = pd.DataFrame(adjusted_rows, columns=self.bottom_nodes)
         return self.compute_bottom_up(forecast_bottom)
