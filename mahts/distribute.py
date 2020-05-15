@@ -1,8 +1,11 @@
+import logging
 import numpy as np
 from scipy import sparse
 import pandas as pd
 from anytree import LevelOrderIter, RenderTree, AsciiStyle
 from mahts.hierarchy import build_tree, compute_summing_matrix
+
+logger = logging.getLogger(__name__)
 
 class HTSDistributor():
     def __init__(self, hierarchy):
@@ -136,7 +139,8 @@ class HTSDistributor():
             X = self.sparse_summing_matrix
 
         adjusted_rows = list()
-        for _,row in forecast.iterrows():
+        for i,row in forecast.iterrows():
+            logger.info(f"Reconciling time step {i+1}/{forecast.shape[0]}")
             if weights is not None:
                 y = weights_matrix.dot(row[self.tree_nodes].values)
             else:
