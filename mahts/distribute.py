@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 from scipy import sparse
+from scipy.optimize import lsq_linear
 import pandas as pd
 from anytree import LevelOrderIter, RenderTree, AsciiStyle
 from mahts.hierarchy import build_tree, compute_summing_matrix
@@ -147,7 +148,7 @@ class HTSDistributor():
                 y = weights_matrix.dot(row[self.tree_nodes].values)
             else:
                 y = row[self.tree_nodes].values
-            beta = sparse.linalg.lsqr(X, y, **solver_kwargs)[0]
+            beta = lsq_linear(X, y, **solver_kwargs)[0]
             adjusted_rows.append(beta)
         forecast_bottom = pd.DataFrame(adjusted_rows, columns=self.bottom_nodes)
         return self.compute_bottom_up(forecast_bottom)
