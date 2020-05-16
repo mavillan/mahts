@@ -148,7 +148,7 @@ class HTSDistributor():
                 y = weights_matrix.dot(row[self.tree_nodes].values)
             else:
                 y = row[self.tree_nodes].values
-            beta = lsq_linear(X, y, **solver_kwargs)[0]
+            beta = lsq_linear(X, y, **solver_kwargs)["x"]
             adjusted_rows.append(beta)
         forecast_bottom = pd.DataFrame(adjusted_rows, columns=self.bottom_nodes)
         return self.compute_bottom_up(forecast_bottom)
