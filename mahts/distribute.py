@@ -140,7 +140,9 @@ class HTSDistributor():
 
         adjusted_rows = list()
         for i,row in forecast.iterrows():
-            logger.info(f"Reconciling time step: {i}")
+            print("-"*100)
+            print(f" Reconciling time step: {i} ".center(100, "-"))
+            print("-"*100)
             if weights is not None:
                 y = weights_matrix.dot(row[self.tree_nodes].values)
             else:
