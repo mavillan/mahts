@@ -150,14 +150,13 @@ class HTSDistributor():
                 y = row[self.tree_nodes].values
             
             if backend == "lsqr":
-                beta = sparse.linalg.lsqr(X, y, **solver_kwargs)["x"]
+                lsq_sol = sparse.linalg.lsqr(X, y, **solver_kwargs)
+                beta = lsq_sol[0]
             elif backend == "lsmr":
-                beta = sparse.linalg.lsmr(X, y, **solver_kwargs)["x"]
-            elif backend == "lsq_linear":
-                beta = lsq_linear(X, y, **solver_kwargs)["x"]
+                lsq_sol = sparse.linalg.lsmr(X, y, **solver_kwargs)
+                beta = lsq_sol[0]
             else:
-                # raise an error
-                pass
+                raise ValueError(f"backend should be 'lsqr' or 'lsmr'.")
             adjusted_rows.append(beta)
         forecast_bottom = pd.DataFrame(adjusted_rows, columns=self.bottom_nodes)
         return self.compute_bottom_up(forecast_bottom)
