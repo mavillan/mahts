@@ -111,7 +111,7 @@ class HTSDistributor():
     def compute_middle_out(self, data, forecast, middle_level=None):
         pass
     
-    def compute_optimal_combination(self, forecast, weights=None, solver_kwargs=dict()):
+    def compute_optimal_combination(self, forecast, weights=None, backend="lsmr", solver_kwargs=dict()):
         """
         Computes optimal-combination reconciliation between all
         levels, using least-squares minimization.
@@ -148,7 +148,16 @@ class HTSDistributor():
                 y = weights_matrix.dot(row[self.tree_nodes].values)
             else:
                 y = row[self.tree_nodes].values
-            beta = lsq_linear(X, y, **solver_kwargs)["x"]
+            
+            if backend == "lsqr":
+                beta = sparse.linalg.lsqr(X, y, **solver_kwargs)["x"]
+            elif backend == "lsmr":
+                beta = sparse.linalg.lsmr(X, y, **solver_kwargs)["x"]
+            elif backend == "lsq_linear":
+                beta = lsq_linear(X, y, **solver_kwargs)["x"]
+            else:
+                # raise an error
+                pass
             adjusted_rows.append(beta)
         forecast_bottom = pd.DataFrame(adjusted_rows, columns=self.bottom_nodes)
         return self.compute_bottom_up(forecast_bottom)
