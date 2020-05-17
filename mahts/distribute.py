@@ -5,6 +5,7 @@ from scipy.optimize import lsq_linear
 import pandas as pd
 from anytree import LevelOrderIter, RenderTree, AsciiStyle
 from mahts.hierarchy import build_tree, compute_summing_matrix
+from mahts.utils import format_lstsq_output
 
 logger = logging.getLogger(__name__)
 
@@ -150,11 +151,13 @@ class HTSDistributor():
                 y = row[self.tree_nodes].values
             
             if backend == "lsqr":
-                lsq_sol = sparse.linalg.lsqr(X, y, **solver_kwargs)
-                beta = lsq_sol[0]
+                lstsq_output = sparse.linalg.lsqr(X, y, **solver_kwargs)
+                beta = lstsq_output[0]
+                format_lstsq_output(lstsq_output, backend=backend)
             elif backend == "lsmr":
-                lsq_sol = sparse.linalg.lsmr(X, y, **solver_kwargs)
-                beta = lsq_sol[0]
+                lstsq_output = sparse.linalg.lsmr(X, y, **solver_kwargs)
+                beta = lstsq_output[0]
+                format_lstsq_output(lstsq_output, backend=backend)
             else:
                 raise ValueError(f"backend should be 'lsqr' or 'lsmr'.")
             adjusted_rows.append(beta)
