@@ -1,13 +1,14 @@
-import logging
 import numpy as np
 from scipy import sparse
-from scipy.optimize import lsq_linear
+from scipy.optimize._lsq.lsq_linear import prepare_bounds
+from scipy.optimize._lsq.trf_linear import trf_linear
 import pandas as pd
 from anytree import LevelOrderIter, RenderTree, AsciiStyle
 from mahts.hierarchy import build_tree, compute_summing_matrix
 from mahts.utils import format_lstsq_output
 
-logger = logging.getLogger(__name__)
+DEFAULT_TRF_KWARGS = {"tol":1e-10, "lsq_solver":"lsmr", "lsmr_tol":1e-6, 
+                      "max_iter":100, "verbose":0}
 
 class HTSDistributor():
     def __init__(self, hierarchy):
@@ -100,11 +101,16 @@ class HTSDistributor():
 
         proportions_by_node = pd.DataFrame(np.ones(forecast.shape[0]), columns=["root"], index=forecast.index)
         for node in LevelOrderIter(self.tree):
-            if node.name == "root": continue
-            level_nodes = [nd.name for nd in node.parent.children]
-            proportions_by_node[node.name] = forecast.loc[:,node.name]/forecast.loc[:,level_nodes].sum(axis=1)
-            proportions_by_node.loc[:, node.name] = proportions_by_node[node.name].fillna(0)
-            proportions_by_node.loc[:, node.name] *= proportions_by_node[node.parent.name]
+            if len(node.children) == 0: continue
+            children_nodes = [nd.name for nd in node.children]
+            children_forecast = forecast.loc[:, children_nodes].values
+            children_forecast_agg = forecast.loc[:, children_nodes].values.sum(axis=1).reshape(-1,1)
+            children_proportions = children_forecast / (children_forecast_agg + np.finfo(float).eps)
+            children_proportions *= proportions_by_node[node.name].values.reshape(-1,1)
+            children_proportions_dataframe = pd.DataFrame(children_proportions, 
+                                                          columns=children_nodes, 
+                                                          index=forecast.index)
+            proportions_by_node = pd.concat([proportions_by_node, children_proportions_dataframe], axis=1)
         forecast_bottom = proportions_by_node[self.bottom_nodes] * forecast["root"].values.reshape(-1,1)
         self.proportions = proportions_by_node
         return self.compute_bottom_up(forecast_bottom)
@@ -112,7 +118,8 @@ class HTSDistributor():
     def compute_middle_out(self, data, forecast, middle_level=None):
         pass
     
-    def compute_optimal_combination(self, forecast, weights=None, backend="lsmr", solver_kwargs=dict()):
+    def compute_optimal_combination(self, forecast, weights=None, backend="lsmr", bounds=None, 
+                                    solver_kwargs=dict(), trf_kwargs=dict()):
         """
         Computes optimal-combination reconciliation between all
         levels, using least-squares minimization.
@@ -126,11 +133,33 @@ class HTSDistributor():
             Weights used of weighted least squares regression. Must
             contain the time series indentifier in its keys and the 
             corresponding weights as values.
+        backend: str
+            Linear least squares solver: lsqr or lsmr. 
+        bounds: list
+            List of 2-tuples array_like with the lower and upper bounds 
+            for each time step to reconcile. 
         solver_kwargs: dict
-            Extra keyword arguments of scipy.sparse.linalg.lsqr function.
+            Arguments for the lstsq backend: scipy.sparse.linalg.lsqr or 
+            scipy.sparse.linalg.lsmr.
+        trf_kwargs: dict
+            Arguments for the trf method:
+                - tol: terminates if the uniform norm of the gradient, 
+                       scaled to account for the presence of the bounds, 
+                       is less than tol.
+                - lsmr_tol: Tolerance parameters ‘atol’ and ‘btol’ for 
+                            scipy.sparse.linalg.lsmr.
+                - max_iter: Maximum number of iterations before termination.
+                - verbose: 0 = work silently (default); 1 = display a termination 
+                           report; 2 = display progress during iterations.
         """
         assert set(forecast.columns) == set(self.tree_nodes), \
             f"'forecast' dataframe must have all (and only) the columns: {self.tree_nodes}."
+        
+        if not backend in ["lsqr","lsmr"]:
+            raise ValueError(f"backend should be 'lsqr' or 'lsmr'.")
+        
+        if bounds is not None and backend == "lsqr":
+            raise ValueError(f"Bounds can be used only with 'lsmr' backend.")
 
         if weights is not None:
             assert set(weights.keys()) == set(self.tree_nodes), \
@@ -158,8 +187,12 @@ class HTSDistributor():
                 lstsq_output = sparse.linalg.lsmr(X, y, **solver_kwargs)
                 beta = lstsq_output[0]
                 format_lstsq_output(lstsq_output, backend=backend)
-            else:
-                raise ValueError(f"backend should be 'lsqr' or 'lsmr'.")
+                
+            if bounds is not None:
+                _trf_kwargs = {**DEFAULT_TRF_KWARGS, **trf_kwargs}
+                lower_bounds,upper_bounds = prepare_bounds(bounds, X.shape[1])
+                trf_output = trf_linear(X, y, beta, lower_bounds, upper_bounds, **_trf_kwargs)
+                beta = trf_output["x"]
             adjusted_rows.append(beta)
         forecast_bottom = pd.DataFrame(adjusted_rows, columns=self.bottom_nodes)
         return self.compute_bottom_up(forecast_bottom)
