@@ -6,7 +6,7 @@ with open('requirements.txt', 'r') as f:
 
 setup(
     name='mahts',
-    version='0.1.0',
+    version='0.1.1',
     author='Martín Villanueva',
     author_email='nallivam@gmail.com',
     packages=find_packages(),
