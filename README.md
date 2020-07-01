@@ -17,7 +17,7 @@ This package implements algorithms for Hierarchical Times Series reconciliation.
 
 ## Installation
 
-Via [PyPI](https://pypi.org/project/hausdorff/):
+Via [PyPI](https://pypi.org/project/mahts/):
 
 ```bash
 pip install mahts
