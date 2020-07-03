@@ -194,5 +194,5 @@ class HTSDistributor():
                 trf_output = trf_linear(X, y, beta, lower_bounds, upper_bounds, **_trf_kwargs)
                 beta = trf_output["x"]
             adjusted_rows.append(beta)
-        forecast_bottom = pd.DataFrame(adjusted_rows, columns=self.bottom_nodes)
+        forecast_bottom = pd.DataFrame(adjusted_rows, columns=self.bottom_nodes, index=forecast.index)
         return self.compute_bottom_up(forecast_bottom)
